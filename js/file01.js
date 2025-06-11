@@ -6,7 +6,7 @@
  * @returns {void}
  */
 import { fetchFakerData } from './functions.js';
-import { saveVote } from './firebase.js'; // Importar saveVote
+import { saveVote, getVotes } from './firebase.js'; // Importar saveVote y getVotes
 
 /**
  * Muestra el toast interactivo si existe en el DOM.
@@ -35,6 +35,59 @@ const showVideo = () => {
 };
 
 /**
+ * Muestra los votos en una tabla dentro del elemento con id "results".
+ * @async
+ * @function
+ * @returns {Promise<void>}
+ */
+const displayVotes = async () => {
+    const results = document.getElementById('results');
+    if (!results) return;
+
+    const response = await getVotes();
+    if (!response.success || !response.data) {
+        results.innerHTML = '<p>No hay votos registrados.</p>';
+        return;
+    }
+
+    // Contar votos por producto
+    const voteCounts = {};
+    Object.values(response.data).forEach(vote => {
+        if (vote.productID) {
+            voteCounts[vote.productID] = (voteCounts[vote.productID] || 0) + 1;
+        }
+    });
+
+    // Crear tabla
+    let table = `
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total de votos</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    Object.entries(voteCounts).forEach(([product, count]) => {
+        table += `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">${product}</td>
+                <td class="px-6 py-4 whitespace-nowrap">${count}</td>
+            </tr>
+        `;
+    });
+
+    table += `
+            </tbody>
+        </table>
+    `;
+
+    results.innerHTML = table;
+};
+
+/**
  * Habilita el formulario de votación y gestiona el envío.
  * @function
  * @returns {void}
@@ -48,6 +101,7 @@ const enableForm = () => {
             if (select && select.value) {
                 await saveVote(select.value);
                 form.reset();
+                await displayVotes(); // Mostrar votos después de guardar
             }
         });
     }
@@ -121,5 +175,6 @@ const loadData = async () => {
     loadData();
     showToast();
     showVideo();
-    enableForm(); // Invocar enableForm
+    enableForm();
+    displayVotes(); // Mostrar votos al cargar la página
 })();

@@ -1,6 +1,6 @@
 // Importar funciones de Firebase desde el CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
 // Configuración de Firebase usando variables de entorno de Vite
 const firebaseConfig = {
@@ -40,6 +40,27 @@ export const saveVote = (productID) => {
     .catch((error) => ({
       success: false,
       message: 'Error al guardar el voto.',
+      error
+    }));
+};
+
+/**
+ * Obtiene todos los votos de la colección "votes" de la base de datos.
+ * @returns {Promise<Object>} Promesa que resuelve con los datos de los votos o un error.
+ */
+export const getVotes = () => {
+  const dbRef = ref(database);
+  return get(child(dbRef, 'votes'))
+    .then((snapshot) => {
+      if (snapshot.exists()) {
+        return { success: true, data: snapshot.val() };
+      } else {
+        return { success: false, message: 'No hay votos registrados.' };
+      }
+    })
+    .catch((error) => ({
+      success: false,
+      message: 'Error al obtener los votos.',
       error
     }));
 };
